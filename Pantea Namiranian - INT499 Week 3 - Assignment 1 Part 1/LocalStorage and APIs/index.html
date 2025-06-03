@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamList App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/17.0.2/umd/react.development.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-router-dom/5.2.0/react-router-dom.min.js" crossorigin></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        nav {
+            margin: 20px;
+        }
+        nav ul {
+            list-style-type: none;
+        }
+        nav li {
+            display: inline;
+            margin: 0 15px;
+        }
+        input {
+            margin-right: 10px;
+        }
+        .completed {
+            font-weight: bold;
+            color: darkgreen;
+        }
+        .button-container {
+            margin-top: 20px;
+        }
+        .list-container {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { HashRouter: Router, Route, Switch, Link } = window.ReactRouterDOM;
+
+        const StreamList = () => {
+            const [inputValue, setInputValue] = React.useState('');
+            const [streams, setStreams] = React.useState(() => {
+                const savedStreams = localStorage.getItem('streams');
+                return savedStreams ? JSON.parse(savedStreams) : [];
+            });
+
+            const handleInputChange = (e) => {
+                setInputValue(e.target.value);
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (inputValue) {
+                    const newStream = { id: Date.now(), title: inputValue, completed: false };
+                    const updatedStreams = [...streams, newStream];
+                    setStreams(updatedStreams);
+                    localStorage.setItem('streams', JSON.stringify(updatedStreams));
+                    setInputValue('');
+                }
+            };
+
+            const handleDelete = (id) => {
+                const updatedStreams = streams.filter(stream => stream.id !== id);
+                setStreams(updatedStreams);
+                localStorage.setItem('streams', JSON.stringify(updatedStreams));
+            };
+
+            const handleComplete = (id) => {
+                const updatedStreams = streams.map(stream => 
+                    stream.id === id ? { ...stream, completed: !stream.completed } : stream
+                );
+                setStreams(updatedStreams);
+                localStorage.setItem('streams', JSON.stringify(updatedStreams));
+            };
+
+            return (
+                <div>
+                    <h1>StreamList</h1>
+                    <form onSubmit={handleSubmit}>
+                        <input
+                            type="text"
+                            value={inputValue}
+                            onChange={handleInputChange}
+                            placeholder="Add a movie or program"
+                        />
+                        <button type="submit">Add</button>
+                    </form>
+                    <div className="button-container">
+                        <button onClick={() => setStreams([])}>Clear All</button>
+                    </div>
+                    <div className="list-container">
+                        <ul>
+                            {streams.map(stream => (
+                                <li key={stream.id} style={{ textDecoration: stream.completed ? 'line-through' : 'none' }}>
+                                    {stream.title}
+                                    <span onClick={() => handleComplete(stream.id)} style={{ cursor: 'pointer', marginLeft: '10px' }}>✔️</span>
+                                    <span onClick={() => handleDelete(stream.id)} style={{ cursor: 'pointer', marginLeft: '10px' }}>🗑️</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            );
+        };
+
+        const Movies = () => {
+            const [movies, setMovies] = React.useState([]);
+            const [searchTerm, setSearchTerm] = React.useState('');
+
+            const handleSearch = () => {
+                fetch(`https://api.themoviedb.org/3/search/movie?api_key=0a42468583efb5d05a623adcfb70c145&query=${searchTerm}`)
+                    .then(response => response.json())
+                    .then(data => setMovies(data.results));
+            };
+
+            return (
+                <div>
+                    <h1>Movies Page</h1>
+                    <input 
+                        type="text" 
+                        value={searchTerm} 
+                        onChange={(e) => setSearchTerm(e.target.value)} 
+                        placeholder="Search for a movie"
+                    />
+                    <button onClick={handleSearch}>Search</button>
+                    <ul>
+                        {movies.map(movie => (
+                            <li key={movie.id}>{movie.title}</li>
+                        ))}
+                    </ul>
+                </div>
+            );
+        };
+
+        const Cart = () => {
+            return (
+                <div>
+                    <h1>Cart Page</h1>
+                    <p>This page will contain cart data in Week 4.</p>
+                </div>
+            );
+        };
+
+        const About = () => {
+            return (
+                <div>
+                    <h1>About Page</h1>
+                    <p>This page will contain information in Week 5.</p>
+                </div>
+            );
+        };
+
+        const App = () => {
+            return (
+                <Router>
+                    <nav>
+                        <ul>
+                            <li><Link to="/">StreamList</Link></li>
+                            <li><Link to="/movies">Movies</Link></li>
+                            <li><Link to="/cart">Cart</Link></li>
+                            <li><Link to="/about">About</Link></li>
+                        </ul>
+                    </nav>
+                    <Switch>
+                        <Route path="/" exact component={StreamList} />
+                        <Route path="/movies" component={Movies} />
+                        <Route path="/cart" component={Cart} />
+                        <Route path="/about" component={About} />
+                    </Switch>
+                </Router>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
